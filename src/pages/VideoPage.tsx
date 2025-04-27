@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ThumbsUp, ThumbsDown, MessageSquare, User, Share2, Flag, Clock, Tag } from "lucide-react";
+import { ThumbsUp, ThumbsDown, MessageSquare, User, Share2, Flag, Clock, Tag, Eye } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
