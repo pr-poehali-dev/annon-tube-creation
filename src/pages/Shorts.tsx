@@ -74,7 +74,6 @@ const Shorts = () => {
   const [shorts, setShorts] = useState<ShortVideo[]>(mockShorts);
   const [isLiked, setIsLiked] = useState<Record<string, boolean>>({});
   const [isPlaying, setIsPlaying] = useState(true);
-  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   
   // Определяем начальный индекс на основе ID из URL
   useEffect(() => {
@@ -93,26 +92,6 @@ const Shorts = () => {
     }
   }, [currentIndex, navigate, shorts]);
 
-  // Управление воспроизведением видео
-  useEffect(() => {
-    const videoElements = videoRefs.current.filter(Boolean);
-    
-    videoElements.forEach((video, index) => {
-      if (index === currentIndex) {
-        if (isPlaying) {
-          video?.play().catch(() => {
-            // Обработка ошибок автовоспроизведения
-            setIsPlaying(false);
-          });
-        } else {
-          video?.pause();
-        }
-      } else {
-        video?.pause();
-      }
-    });
-  }, [currentIndex, isPlaying]);
-
   const handleVideoClick = () => {
     setIsPlaying(!isPlaying);
   };
@@ -120,12 +99,14 @@ const Shorts = () => {
   const handleNext = () => {
     if (currentIndex < shorts.length - 1) {
       setCurrentIndex(currentIndex + 1);
+      setIsPlaying(true); // Автоматически начинаем воспроизведение при переходе к следующему видео
     }
   };
 
   const handlePrev = () => {
     if (currentIndex > 0) {
       setCurrentIndex(currentIndex - 1);
+      setIsPlaying(true); // Автоматически начинаем воспроизведение при переходе к предыдущему видео
     }
   };
 
@@ -201,9 +182,6 @@ const Shorts = () => {
                   src={short.videoUrl}
                   alt={short.title}
                   className="w-full h-full object-cover"
-                  ref={el => {
-                    if (el) videoRefs.current[index] = el as unknown as HTMLVideoElement;
-                  }}
                 />
                 
                 {!isPlaying && (
