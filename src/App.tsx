@@ -10,6 +10,7 @@ import NotFound from "./pages/NotFound";
 import VideoPage from "./pages/VideoPage";
 import Settings from "./pages/Settings";
 import Upload from "./pages/Upload";
+import Search from "./pages/Search";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/video/:videoId" element={<VideoPage />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/upload" element={<Upload />} />
+            <Route path="/search" element={<Search />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
