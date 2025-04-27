@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
@@ -21,51 +21,8 @@ interface ShortVideo {
   isNsfw?: boolean;
 }
 
-const mockShorts: ShortVideo[] = [
-  {
-    id: "shorts-demo",
-    title: "Первый вертикальный ролик",
-    description: "Это пример короткого вертикального видео на нашей платформе #shorts #demo",
-    videoUrl: "https://images.unsplash.com/photo-1611162618071-b39a2ec055fb?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-    audioTrack: "Оригинальный звук - пользователь123",
-    likes: 523,
-    comments: 42,
-    author: {
-      id: "user1",
-      name: "ВидеоМастер",
-      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=60&ixlib=rb-4.0.3"
-    }
-  },
-  {
-    id: "shorts-demo2",
-    title: "Интересный трюк",
-    description: "Смотрите, как я делаю этот невероятный трюк! Подписывайтесь для большего контента",
-    videoUrl: "https://images.unsplash.com/photo-1504270997636-07ddfbd48945?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-    audioTrack: "Популярный трек - Исполнитель",
-    likes: 1204,
-    comments: 89,
-    author: {
-      id: "user2",
-      name: "ТрюкМастер",
-      avatar: "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=100&auto=format&fit=crop&q=60&ixlib=rb-4.0.3"
-    }
-  },
-  {
-    id: "shorts-demo3",
-    title: "Самый крутой лайфхак",
-    description: "Этот лайфхак изменит вашу жизнь! Смотрите до конца. #лайфхак #shorts",
-    videoUrl: "https://images.unsplash.com/photo-1517404215738-15263e9f9178?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-    audioTrack: "Трендовый звук - TikTok",
-    likes: 9843,
-    comments: 432,
-    author: {
-      id: "user3",
-      name: "ЛайфхакПро",
-      avatar: "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100&auto=format&fit=crop&q=60&ixlib=rb-4.0.3"
-    },
-    isNsfw: true
-  }
-];
+// Пустой массив видео
+const mockShorts: ShortVideo[] = [];
 
 const Shorts = () => {
   const { shortId } = useParams();
