@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ThumbsUp, ThumbsDown, MessageSquare, User, Share2, Flag, Clock, Tag, Eye } from "lucide-react";
 import Navbar from "@/components/Navbar";
@@ -7,101 +7,168 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-// Заглушка для демонстрации
-const mockVideos = {
-  "video1": {
-    id: "video1",
-    title: "How to Build a React Application from Scratch",
-    description: "В этом видео я показываю, как создать полноценное React-приложение с нуля. Мы рассмотрим настройку проекта, компоненты, маршрутизацию и многое другое.",
-    videoUrl: "https://example.com/video1.mp4", // В реальности здесь будет настоящий URL
-    thumbnail: "https://images.unsplash.com/photo-1633356122102-3fe601e05bd2?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-    author: {
-      id: "user1",
-      name: "CodeMaster",
-      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-      subscribers: 45600
-    },
-    views: 156000,
-    likes: 12400,
-    dislikes: 320,
-    uploadedAt: new Date(2025, 2, 15),
-    duration: 1840,
-    tags: ["react", "javascript", "programming", "webdev"],
-    comments: [
-      {
-        id: "c1",
-        author: {
-          name: "WebDevFan",
-          avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=60&ixlib=rb-4.0.3"
-        },
-        content: "Очень полезное видео! Спасибо за подробное объяснение.",
-        likes: 120,
-        dislikes: 2,
-        timestamp: new Date(2025, 2, 16),
-        replies: [
-          {
-            id: "r1",
-            author: {
-              name: "CodeMaster",
-              avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=60&ixlib=rb-4.0.3"
-            },
-            content: "Рад, что вам понравилось! Планирую сделать продолжение.",
-            likes: 45,
-            dislikes: 0,
-            timestamp: new Date(2025, 2, 16)
-          }
-        ]
-      },
-      {
-        id: "c2",
-        author: {
-          name: "ReactLearner",
-          avatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=100&auto=format&fit=crop&q=60&ixlib=rb-4.0.3"
-        },
-        content: "На какой минуте рассказывается про хуки? Не могу найти.",
-        likes: 30,
-        dislikes: 0,
-        timestamp: new Date(2025, 2, 18),
-        replies: []
-      }
-    ]
-  },
-  "video2": {
-    id: "video2",
-    title: "Advanced CSS Techniques Everyone Should Know",
-    description: "Продвинутые техники CSS, которые должен знать каждый веб-разработчик.",
-    videoUrl: "https://example.com/video2.mp4",
-    thumbnail: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-    author: {
-      id: "user2",
-      name: "WebDesignPro",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-      subscribers: 32400
-    },
-    views: 98400,
-    likes: 8700,
-    dislikes: 230,
-    uploadedAt: new Date(2025, 3, 10),
-    duration: 1260,
-    tags: ["css", "webdesign", "frontend"],
-    comments: []
-  }
-};
+interface Comment {
+  id: string;
+  author: {
+    name: string;
+    avatar: string;
+  };
+  content: string;
+  likes: number;
+  dislikes: number;
+  timestamp: Date;
+  replies: Reply[];
+}
+
+interface Reply {
+  id: string;
+  author: {
+    name: string;
+    avatar: string;
+  };
+  content: string;
+  likes: number;
+  dislikes: number;
+  timestamp: Date;
+}
+
+interface VideoData {
+  id: string;
+  title: string;
+  description: string;
+  videoUrl: string;
+  thumbnail: string;
+  author: {
+    id: string;
+    name: string;
+    avatar: string;
+    subscribers: number;
+  };
+  views: number;
+  likes: number;
+  dislikes: number;
+  uploadedAt: Date;
+  duration: number;
+  tags: string[];
+  comments: Comment[];
+}
 
 const VideoPage = () => {
   const { videoId } = useParams();
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [hasLiked, setHasLiked] = useState(false);
   const [hasDisliked, setHasDisliked] = useState(false);
+  const [video, setVideo] = useState<VideoData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
-  const video = mockVideos[videoId as keyof typeof mockVideos];
+  useEffect(() => {
+    // Имитация загрузки данных с сервера
+    const fetchVideoData = async () => {
+      setLoading(true);
+      try {
+        // В реальном приложении здесь был бы запрос к API
+        // fetch(`/api/videos/${videoId}`)
+        
+        // Для демонстрации используем имитацию запроса
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // Проверка, существует ли видео
+        if (videoId !== "demo-video") {
+          throw new Error("Video not found");
+        }
+        
+        // Получаем текущую дату и время
+        const now = new Date();
+        // Создаем дату загрузки видео (например, 3 дня назад)
+        const uploadDate = new Date(now);
+        uploadDate.setDate(now.getDate() - 3);
+        
+        // Случайные значения для просмотров, лайков и дизлайков
+        const views = Math.floor(Math.random() * 100000) + 1000;
+        const likes = Math.floor(Math.random() * 10000) + 100;
+        const dislikes = Math.floor(Math.random() * 1000) + 10;
+        
+        const mockVideoData: VideoData = {
+          id: "demo-video",
+          title: "Introduction to AnnonTube - The Anonymous Video Platform",
+          description: "Welcome to AnnonTube! This is a platform where you can share and watch videos anonymously. Learn about features like video uploads, comments, likes/dislikes, and more in this introduction video.",
+          videoUrl: "https://example.com/demo-video.mp4",
+          thumbnail: "https://images.unsplash.com/photo-1611162616475-46b635cb6868?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
+          author: {
+            id: "anontube-official",
+            name: "AnnonTube Official",
+            avatar: "https://images.unsplash.com/photo-1633356122102-3fe601e05bd2?w=100&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
+            subscribers: 5243
+          },
+          views: views,
+          likes: likes,
+          dislikes: dislikes,
+          uploadedAt: uploadDate,
+          duration: 425, // 7:05
+          tags: ["tutorial", "introduction", "anontube"],
+          comments: [
+            {
+              id: "comment1",
+              author: {
+                name: "Anonymous User",
+                avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=60&ixlib=rb-4.0.3"
+              },
+              content: "Great platform idea! Looking forward to using it.",
+              likes: 24,
+              dislikes: 2,
+              timestamp: new Date(uploadDate.getTime() + 3600000), // 1 hour after upload
+              replies: [
+                {
+                  id: "reply1",
+                  author: {
+                    name: "AnnonTube Official",
+                    avatar: "https://images.unsplash.com/photo-1633356122102-3fe601e05bd2?w=100&auto=format&fit=crop&q=60&ixlib=rb-4.0.3"
+                  },
+                  content: "Thanks for your support! We're working hard to make this the best anonymous video platform.",
+                  likes: 12,
+                  dislikes: 0,
+                  timestamp: new Date(uploadDate.getTime() + 7200000) // 2 hours after upload
+                }
+              ]
+            }
+          ]
+        };
+        
+        setVideo(mockVideoData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An error occurred");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchVideoData();
+  }, [videoId]);
   
-  if (!video) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center">
-        <h1 className="text-2xl font-bold mb-4">Видео не найдено</h1>
-        <p className="mb-6">Запрошенное видео не существует или было удалено.</p>
-        <Button asChild><Link to="/">Вернуться на главную</Link></Button>
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 py-20 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading video...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (error || !video) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center">
+          <h1 className="text-2xl font-bold mb-4">Video not found</h1>
+          <p className="mb-6 text-muted-foreground">The video you're looking for doesn't exist or has been removed.</p>
+          <Button asChild><Link to="/">Back to Home</Link></Button>
+        </div>
       </div>
     );
   }
@@ -159,7 +226,7 @@ const VideoPage = () => {
                 className="w-full h-full object-cover" 
               />
               <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                <p className="text-white">▶️ Заглушка для видеоплеера</p>
+                <p className="text-white">▶️ Video Player Placeholder</p>
               </div>
               <div className="absolute bottom-4 right-4 bg-black/70 text-white px-2 py-1 text-sm rounded">
                 {formatDuration(video.duration)}
@@ -177,7 +244,7 @@ const VideoPage = () => {
                   </Avatar>
                   <div>
                     <p className="font-medium">{video.author.name}</p>
-                    <p className="text-sm text-muted-foreground">{formatNumber(video.author.subscribers)} подписчиков</p>
+                    <p className="text-sm text-muted-foreground">{formatNumber(video.author.subscribers)} subscribers</p>
                   </div>
                 </Link>
                 <Button 
@@ -185,7 +252,7 @@ const VideoPage = () => {
                   className={isSubscribed ? "bg-green-600 hover:bg-green-700" : ""} 
                   onClick={() => setIsSubscribed(!isSubscribed)}
                 >
-                  {isSubscribed ? "Вы подписаны" : "Подписаться"}
+                  {isSubscribed ? "Subscribed" : "Subscribe"}
                 </Button>
               </div>
               
@@ -210,11 +277,11 @@ const VideoPage = () => {
                 </Button>
                 <Button variant="outline" size="sm" className="flex items-center space-x-1">
                   <Share2 className="h-4 w-4" />
-                  <span>Поделиться</span>
+                  <span>Share</span>
                 </Button>
                 <Button variant="outline" size="sm" className="flex items-center space-x-1">
                   <Flag className="h-4 w-4" />
-                  <span>Пожаловаться</span>
+                  <span>Report</span>
                 </Button>
               </div>
             </div>
@@ -224,7 +291,7 @@ const VideoPage = () => {
               <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-2">
                 <span className="flex items-center space-x-1">
                   <Eye className="h-4 w-4" />
-                  <span>{formatNumber(video.views)} просмотров</span>
+                  <span>{formatNumber(video.views)} views</span>
                 </span>
                 <span className="flex items-center space-x-1">
                   <Clock className="h-4 w-4" />
@@ -254,10 +321,10 @@ const VideoPage = () => {
             <Tabs defaultValue="comments">
               <TabsList className="mb-4">
                 <TabsTrigger value="comments">
-                  Комментарии ({video.comments.length})
+                  Comments ({video.comments.length})
                 </TabsTrigger>
                 <TabsTrigger value="related">
-                  Похожие видео
+                  Related Videos
                 </TabsTrigger>
               </TabsList>
               
@@ -271,10 +338,10 @@ const VideoPage = () => {
                     <div className="flex-1">
                       <textarea 
                         className="w-full border rounded-lg p-2 min-h-[100px] focus:outline-none focus:ring-2 focus:ring-green-300"
-                        placeholder="Добавить комментарий..."
+                        placeholder="Add a comment..."
                       />
                       <div className="flex justify-end mt-2">
-                        <Button>Отправить</Button>
+                        <Button className="bg-green-600 hover:bg-green-700">Send</Button>
                       </div>
                     </div>
                   </div>
@@ -307,7 +374,7 @@ const VideoPage = () => {
                             </Button>
                             <Button variant="ghost" size="sm" className="h-8 px-2">
                               <MessageSquare className="h-4 w-4 mr-1" />
-                              <span>Ответить</span>
+                              <span>Reply</span>
                             </Button>
                           </div>
                         </div>
@@ -352,7 +419,7 @@ const VideoPage = () => {
               
               <TabsContent value="related">
                 <div className="grid grid-cols-1 gap-4">
-                  <p className="text-muted-foreground">Похожие видео будут отображаться здесь.</p>
+                  <p className="text-muted-foreground">Related videos will appear here.</p>
                 </div>
               </TabsContent>
             </Tabs>
@@ -360,37 +427,9 @@ const VideoPage = () => {
           
           {/* Правая колонка с рекомендациями */}
           <div className="lg:col-span-1">
-            <h3 className="text-lg font-medium mb-4">Рекомендуемые видео</h3>
+            <h3 className="text-lg font-medium mb-4">Recommended Videos</h3>
             <div className="space-y-4">
-              {Object.values(mockVideos)
-                .filter(v => v.id !== video.id)
-                .map((relatedVideo) => (
-                  <Link 
-                    key={relatedVideo.id}
-                    to={`/video/${relatedVideo.id}`}
-                    className="flex space-x-2 hover:bg-muted p-2 rounded-lg transition-colors"
-                  >
-                    <div className="relative w-40 h-24 flex-shrink-0">
-                      <img 
-                        src={relatedVideo.thumbnail} 
-                        alt={relatedVideo.title} 
-                        className="w-full h-full object-cover rounded-md" 
-                      />
-                      <div className="absolute bottom-1 right-1 bg-black/70 text-white px-1 py-0.5 text-xs rounded">
-                        {formatDuration(relatedVideo.duration)}
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className="font-medium line-clamp-2 text-sm">{relatedVideo.title}</h4>
-                      <p className="text-xs text-muted-foreground mt-1">{relatedVideo.author.name}</p>
-                      <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
-                        <span>{formatNumber(relatedVideo.views)} просмотров</span>
-                        <span>•</span>
-                        <span>{formatDate(relatedVideo.uploadedAt)}</span>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
+              <p className="text-muted-foreground">No recommendations available right now.</p>
             </div>
           </div>
         </div>
