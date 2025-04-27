@@ -82,33 +82,13 @@ const Upload = () => {
         }
         return prev + Math.floor(Math.random() * 10);
       });
-    }, 500);
+    }, 300); // Ускорил процесс загрузки
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title.trim()) {
-      toast({
-        title: "Ошибка",
-        description: "Введите название видео",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (!videoFile) {
-      toast({
-        title: "Ошибка",
-        description: "Загрузите видеофайл",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // В реальном приложении здесь был бы код для отправки файлов на сервер
-    // через FormData или другой механизм
-    
+    // Загружаем видео без проверок
     simulateUpload();
   };
 
@@ -173,7 +153,7 @@ const Upload = () => {
                     id="nsfl"
                     checked={isNsfl}
                     onCheckedChange={(checked) => setIsNsfl(checked === true)}
-                    disabled={uploading || !isNsfw}
+                    disabled={uploading}
                   />
                   <div className="grid gap-1.5 leading-none">
                     <Label htmlFor="nsfl" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
@@ -306,7 +286,7 @@ const Upload = () => {
             <Button 
               type="submit" 
               className="bg-green-600 hover:bg-green-700"
-              disabled={uploading || !videoFile || !title.trim()}
+              disabled={uploading}
             >
               <UploadIcon className="h-4 w-4 mr-2" />
               {uploading ? "Загрузка..." : "Загрузить видео"}
