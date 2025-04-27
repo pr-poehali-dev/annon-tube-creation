@@ -33,6 +33,9 @@ const Upload = () => {
       setVideoFile(file);
       const url = URL.createObjectURL(file);
       setVideoPreview(url);
+      
+      // Автоматически запускаем загрузку при выборе видео
+      simulateUpload();
     }
   };
 
@@ -63,7 +66,7 @@ const Upload = () => {
     setUploading(true);
     setProgress(0);
     
-    // Симуляция процесса загрузки
+    // Ускоренная симуляция загрузки
     const interval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 100) {
@@ -73,22 +76,21 @@ const Upload = () => {
           // Показать уведомление об успешной загрузке
           toast({
             title: "Видео успешно загружено",
-            description: "Ваше видео обрабатывается и скоро будет доступно",
+            description: "Ваше видео уже доступно для просмотра",
           });
           
-          // Перенаправить на главную страницу после успешной загрузки
-          setTimeout(() => navigate("/"), 2000);
+          // Перенаправить на страницу видео (имитация ID нового видео)
+          const newVideoId = "demo-video";
+          setTimeout(() => navigate(`/video/${newVideoId}`), 500);
           return 100;
         }
-        return prev + Math.floor(Math.random() * 10);
+        return prev + Math.floor(Math.random() * 20); // Ускоренный прогресс
       });
-    }, 300); // Ускорил процесс загрузки
+    }, 150); // Очень быстрая симуляция
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Загружаем видео без проверок
     simulateUpload();
   };
 
@@ -265,7 +267,7 @@ const Upload = () => {
           {uploading && (
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span>Загрузка...</span>
+                <span>Загрузка видео...</span>
                 <span>{progress}%</span>
               </div>
               <Progress value={progress} className="h-2" />
