@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ThumbsUp, ThumbsDown, MessageSquare, User, Share2, Flag, Clock, Tag, Eye } from "lucide-react";
+import { ThumbsUp, ThumbsDown, MessageSquare, User, Share2, Flag, Clock, Tag, Eye, FileVideo } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -150,14 +150,19 @@ const VideoPage = () => {
           foundVideo.uploadedAt = new Date(foundVideo.uploadedAt);
         }
         
-        // Преобразуем даты комментариев, если они строки
-        if (foundVideo.comments) {
+        // Если у видео нет комментариев, создаем пустой массив
+        if (!foundVideo.comments) {
+          foundVideo.comments = [];
+        } else {
+          // Преобразуем даты комментариев, если они строки
           foundVideo.comments = foundVideo.comments.map((comment: any) => {
             if (typeof comment.timestamp === 'string') {
               comment.timestamp = new Date(comment.timestamp);
             }
             
-            if (comment.replies) {
+            if (!comment.replies) {
+              comment.replies = [];
+            } else {
               comment.replies = comment.replies.map((reply: any) => {
                 if (typeof reply.timestamp === 'string') {
                   reply.timestamp = new Date(reply.timestamp);
@@ -183,6 +188,7 @@ const VideoPage = () => {
         
         setVideo(foundVideo);
       } catch (err) {
+        console.error("Error loading video:", err);
         setError(err instanceof Error ? err.message : "An error occurred");
       } finally {
         setLoading(false);
@@ -450,7 +456,7 @@ const VideoPage = () => {
                 </span>
               </div>
               
-              {video.tags.length > 0 && (
+              {video.tags && video.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-3">
                   {video.tags.map((tag, index) => (
                     <Link 
@@ -548,7 +554,7 @@ const VideoPage = () => {
                       </div>
                       
                       {/* Ответы на комментарий */}
-                      {comment.replies.length > 0 && (
+                      {comment.replies && comment.replies.length > 0 && (
                         <div className="ml-12 space-y-4">
                           {comment.replies.map((reply) => (
                             <div key={reply.id} className="flex items-start space-x-4">
@@ -635,9 +641,9 @@ const RecommendedVideos = ({ currentVideoId }: { currentVideoId?: string }) => {
       {recommendedVideos.map((video: any) => (
         <Link key={video.id} to={`/video/${video.id}`} className="flex space-x-2 group">
           <div className="relative w-32 h-20 bg-muted rounded overflow-hidden">
-            {localStorage.getItem(`thumbnail_${video.id}`) ? (
+            {video.thumbnail ? (
               <img 
-                src={localStorage.getItem(`thumbnail_${video.id}`) || ''} 
+                src={video.thumbnail} 
                 alt={video.title} 
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform" 
               />
