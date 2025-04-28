@@ -87,39 +87,120 @@ const Upload = () => {
     if (thumbnailInputRef.current) thumbnailInputRef.current.value = "";
   };
 
-  const simulateUpload = (isShort: boolean = false) => {
+  // Функция для генерации уникального ID видео
+  const generateVideoId = () => {
+    return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
+  };
+
+  // Функция для сохранения данных видео в localStorage
+  const saveVideoData = (videoId: string, videoData: any) => {
+    // Получаем существующие видео из localStorage или создаем новый массив
+    const existingVideos = JSON.parse(localStorage.getItem('uploadedVideos') || '[]');
+    
+    // Добавляем новое видео
+    existingVideos.push({
+      ...videoData,
+      id: videoId,
+      uploadedAt: new Date().toISOString()
+    });
+    
+    // Сохраняем обновленный список
+    localStorage.setItem('uploadedVideos', JSON.stringify(existingVideos));
+  };
+
+  // Функция для сохранения бинарных данных видео в localStorage
+  const saveVideoFile = (videoId: string, file: File) => {
+    return new Promise<void>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        // Сохраняем только URL для предварительного просмотра, чтобы не перегружать localStorage
+        localStorage.setItem(`video_${videoId}`, videoPreview || '');
+        
+        // Если есть превью, сохраняем и его
+        if (thumbnailPreview) {
+          localStorage.setItem(`thumbnail_${videoId}`, thumbnailPreview);
+        }
+        
+        resolve();
+      };
+      
+      // Начинаем чтение файла как Data URL
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleRealUpload = async () => {
+    // Генерируем уникальный ID для видео
+    const videoId = generateVideoId();
+    
+    // Подготавливаем данные видео
+    const videoData = {
+      id: videoId,
+      title,
+      description,
+      isNsfw,
+      isNsfl,
+      author: {
+        name: "Текущий пользователь",
+        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=60&ixlib=rb-4.0.3"
+      },
+      videoType, // regular или shorts
+      category,
+      showInNewsfeed,
+      allowComments,
+      videoFormat,
+      duration: 120, // Заглушка, в реальном приложении нужно получать длительность видео
+      views: 0,
+      likes: 0,
+      dislikes: 0,
+      comments: [],
+      tags: description.match(/#[a-zA-Z0-9]+/g) || [] // Извлекаем хэштеги из описания
+    };
+    
+    try {
+      // Сохраняем метаданные видео
+      saveVideoData(videoId, videoData);
+      
+      // Сохраняем файл видео
+      await saveVideoFile(videoId, videoFile!);
+      
+      // Уведомляем пользователя об успешной загрузке
+      toast({
+        title: "Видео успешно загружено",
+        description: "Ваше видео уже доступно для просмотра",
+      });
+      
+      // Перенаправляем на страницу видео
+      setTimeout(() => {
+        navigate(videoType === "shorts" ? `/shorts/${videoId}` : `/video/${videoId}`);
+      }, 500);
+    } catch (error) {
+      toast({
+        title: "Ошибка при загрузке",
+        description: "Произошла ошибка при загрузке видео. Пожалуйста, попробуйте еще раз.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const simulateUpload = async () => {
     setUploading(true);
     setProgress(0);
     
-    // Ускоренная симуляция загрузки
+    // Имитируем процесс загрузки
+    let currentProgress = 0;
     const interval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setUploading(false);
-          
-          // Показать уведомление об успешной загрузке
-          toast({
-            title: "Видео успешно загружено",
-            description: "Ваше видео уже доступно для просмотра",
-          });
-          
-          // Генерируем ID видео в зависимости от типа
-          const newVideoId = isShort ? "shorts-demo" : "demo-video";
-          
-          // Перенаправить на страницу видео или шортс
-          setTimeout(() => {
-            if (isShort) {
-              navigate(`/shorts/${newVideoId}`);
-            } else {
-              navigate(`/video/${newVideoId}`);
-            }
-          }, 500);
-          return 100;
-        }
-        return prev + Math.floor(Math.random() * 20); // Ускоренный прогресс
-      });
-    }, 150); // Очень быстрая симуляция
+      currentProgress += Math.floor(Math.random() * 10) + 5;
+      if (currentProgress >= 100) {
+        currentProgress = 100;
+        clearInterval(interval);
+        
+        // Вызываем реальную функцию загрузки после "завершения" прогресса
+        handleRealUpload();
+        setUploading(false);
+      }
+      setProgress(currentProgress);
+    }, 200);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -146,7 +227,7 @@ const Upload = () => {
     }
     
     // Начинаем загрузку только после нажатия кнопки
-    simulateUpload(videoType === "shorts");
+    simulateUpload();
   };
 
   return (
