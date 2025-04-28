@@ -59,10 +59,8 @@ const Upload = () => {
       const url = URL.createObjectURL(file);
       setVideoPreview(url);
       
-      // Автоматически запускаем загрузку при выборе видео
-      if (!uploading) {
-        simulateUpload(file.name.includes("shorts") || videoType === "shorts");
-      }
+      // Убираем автоматический запуск загрузки при выборе видео
+      // Теперь загрузка начнется только при нажатии кнопки "Загрузить видео"
     }
   };
 
@@ -126,6 +124,28 @@ const Upload = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Проверка на наличие видеофайла перед началом загрузки
+    if (!videoFile) {
+      toast({
+        title: "Ошибка",
+        description: "Пожалуйста, выберите видеофайл для загрузки",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Проверка на наличие заголовка
+    if (!title.trim()) {
+      toast({
+        title: "Ошибка",
+        description: "Пожалуйста, введите название видео",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Начинаем загрузку только после нажатия кнопки
     simulateUpload(videoType === "shorts");
   };
 
@@ -155,6 +175,7 @@ const Upload = () => {
                       maxLength={100}
                       className="mt-1"
                       disabled={uploading}
+                      required
                     />
                     <div className="text-xs text-muted-foreground mt-1">
                       {title.length}/100 символов
@@ -320,6 +341,7 @@ const Upload = () => {
                       maxLength={50}
                       className="mt-1"
                       disabled={uploading}
+                      required
                     />
                     <div className="text-xs text-muted-foreground mt-1">
                       {title.length}/50 символов
@@ -517,7 +539,7 @@ const Upload = () => {
               <Button 
                 type="submit" 
                 className="bg-green-600 hover:bg-green-700"
-                disabled={uploading}
+                disabled={uploading || !videoFile}
               >
                 <UploadIcon className="h-4 w-4 mr-2" />
                 {uploading ? "Загрузка..." : "Загрузить видео"}
