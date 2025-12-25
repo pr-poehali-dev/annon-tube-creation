@@ -5,6 +5,7 @@ import VideoCard from "@/components/VideoCard";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import func2url from "../../backend/func2url.json";
 
 // Типы для видео, используемые в компоненте
 interface Video {
@@ -47,43 +48,41 @@ const Index = () => {
     const fetchVideos = async () => {
       setLoading(true);
       try {
-        // Имитируем задержку загрузки данных
-        await new Promise(resolve => setTimeout(resolve, 500));
+        const response = await fetch(`${func2url['get-videos']}?type=regular&category=${activeCategory}&limit=50`);
+        const data = await response.json();
         
-        // Получаем загруженные пользователем видео из localStorage
-        const uploadedVideos = JSON.parse(localStorage.getItem('uploadedVideos') || '[]');
-        
-        // Преобразуем даты из строкового формата
-        const processedVideos = uploadedVideos.map((video: any) => ({
-          ...video,
-          uploadedAt: new Date(video.uploadedAt)
-        })).filter((video: any) => video.videoType !== 'shorts' && video.showInNewsfeed !== false);
-        
-        // Фильтруем по категории
-        let filteredVideos = processedVideos;
-        if (activeCategory !== "all") {
-          filteredVideos = processedVideos.filter((video: any) => 
-            video.category === activeCategory
-          );
+        if (!response.ok) {
+          throw new Error(data.error || 'Ошибка загрузки видео');
         }
         
-        // Добавляем демо-видео только если нет загруженных пользователем
-        if (filteredVideos.length === 0 && activeCategory === "all") {
-          // Создаем демо-видео
+        const processedVideos = data.videos.map((video: any) => ({
+          id: video.id,
+          title: video.title,
+          thumbnail: video.thumbnail,
+          author: video.author,
+          views: video.views,
+          likes: video.likes,
+          dislikes: video.dislikes,
+          uploadedAt: new Date(video.uploadedAt),
+          duration: video.duration,
+          isNsfw: video.isNsfw,
+          isNsfl: video.isNsfl
+        }));
+        
+        if (processedVideos.length === 0 && activeCategory === "all") {
           const now = new Date();
           const demoVideos = generateDemoVideos(now);
-          filteredVideos = [...demoVideos];
+          setVideos(demoVideos);
+        } else {
+          setVideos(processedVideos);
         }
+      } catch (err: any) {
+        console.error('Error fetching videos:', err);
+        setError(err.message || "Ошибка при загрузке видео");
         
-        // Сортируем видео по дате загрузки (новые в начале)
-        filteredVideos.sort((a: any, b: any) => {
-          return new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime();
-        });
-        
-        setVideos(filteredVideos);
-      } catch (err) {
-        setError("Ошибка при загрузке видео");
-        console.error(err);
+        const now = new Date();
+        const demoVideos = generateDemoVideos(now);
+        setVideos(demoVideos);
       } finally {
         setLoading(false);
       }
@@ -144,7 +143,7 @@ const Index = () => {
                     key={video.id}
                     id={video.id}
                     title={video.title}
-                    thumbnail={localStorage.getItem(`thumbnail_${video.id}`) || video.thumbnail || "https://images.unsplash.com/photo-1611162616475-46b635cb6868?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3"}
+                    thumbnail={video.thumbnail}
                     author={video.author}
                     views={video.views}
                     likes={video.likes}

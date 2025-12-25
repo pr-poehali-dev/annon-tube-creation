@@ -12,6 +12,7 @@ import { toast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload as UploadIcon, X, FileVideo, ImagePlus, TimerIcon, Clock } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import func2url from "../../backend/func2url.json";
 
 const Upload = () => {
   const navigate = useNavigate();
@@ -30,6 +31,7 @@ const Upload = () => {
   const [showInNewsfeed, setShowInNewsfeed] = useState(true);
   const [allowComments, setAllowComments] = useState(true);
   const [videoFormat, setVideoFormat] = useState<string>("hd");
+  const [captchaVerified, setCaptchaVerified] = useState(false);
   
   const videoInputRef = useRef<HTMLInputElement>(null);
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
@@ -87,99 +89,78 @@ const Upload = () => {
     if (thumbnailInputRef.current) thumbnailInputRef.current.value = "";
   };
 
-  // Функция для генерации уникального ID видео
-  const generateVideoId = () => {
-    return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
-  };
-
-  // Функция для сохранения данных видео в localStorage
-  const saveVideoData = (videoId: string, videoData: any) => {
-    // Получаем существующие видео из localStorage или создаем новый массив
-    const existingVideos = JSON.parse(localStorage.getItem('uploadedVideos') || '[]');
-    
-    // Добавляем новое видео
-    existingVideos.push({
-      ...videoData,
-      id: videoId,
-      uploadedAt: new Date().toISOString()
-    });
-    
-    // Сохраняем обновленный список
-    localStorage.setItem('uploadedVideos', JSON.stringify(existingVideos));
-  };
-
-  // Функция для сохранения бинарных данных видео в localStorage
-  const saveVideoFile = (videoId: string, file: File) => {
-    return new Promise<void>((resolve) => {
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        // Сохраняем только URL для предварительного просмотра, чтобы не перегружать localStorage
-        localStorage.setItem(`video_${videoId}`, videoPreview || '');
-        
-        // Если есть превью, сохраняем и его
-        if (thumbnailPreview) {
-          localStorage.setItem(`thumbnail_${videoId}`, thumbnailPreview);
-        }
-        
-        resolve();
-      };
-      
-      // Начинаем чтение файла как Data URL
       reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  const getVideoDuration = (file: File): Promise<number> => {
+    return new Promise((resolve) => {
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      video.onloadedmetadata = () => {
+        resolve(Math.floor(video.duration));
+        URL.revokeObjectURL(video.src);
+      };
+      video.src = URL.createObjectURL(file);
     });
   };
 
   const handleRealUpload = async () => {
-    // Генерируем уникальный ID для видео
-    const videoId = generateVideoId();
-    
-    // Подготавливаем данные видео
-    const videoData = {
-      id: videoId,
-      title,
-      description,
-      isNsfw,
-      isNsfl,
-      author: {
-        name: "Текущий пользователь",
-        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=60&ixlib=rb-4.0.3"
-      },
-      videoType, // regular или shorts
-      category,
-      showInNewsfeed,
-      allowComments,
-      videoFormat,
-      duration: 120, // Заглушка, в реальном приложении нужно получать длительность видео
-      views: 0,
-      likes: 0,
-      dislikes: 0,
-      comments: [],
-      tags: description.match(/#[a-zA-Z0-9]+/g) || [] // Извлекаем хэштеги из описания
-    };
-    
     try {
-      // Сохраняем метаданные видео
-      saveVideoData(videoId, videoData);
-      
-      // Сохраняем файл видео
-      await saveVideoFile(videoId, videoFile!);
-      
-      // Уведомляем пользователя об успешной загрузке
-      toast({
-        title: "Видео успешно загружено",
-        description: "Ваше видео уже доступно для просмотра",
+      const videoBase64 = await fileToBase64(videoFile!);
+      const thumbnailBase64 = thumbnailFile ? await fileToBase64(thumbnailFile) : null;
+      const duration = await getVideoDuration(videoFile!);
+
+      const response = await fetch(func2url['upload-video'], {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          captchaVerified,
+          videoFile: videoBase64,
+          thumbnailFile: thumbnailBase64,
+          title,
+          description,
+          authorName: 'Аноним',
+          authorAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+          videoType,
+          category,
+          isNsfw,
+          isNsfl,
+          showInNewsfeed,
+          allowComments,
+          videoFormat,
+          duration
+        })
       });
-      
-      // Перенаправляем на страницу видео
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Ошибка при загрузке');
+      }
+
+      toast({
+        title: 'Видео успешно загружено',
+        description: 'Ваше видео уже доступно для просмотра',
+      });
+
       setTimeout(() => {
-        navigate(videoType === "shorts" ? `/shorts/${videoId}` : `/video/${videoId}`);
+        navigate(videoType === 'shorts' ? `/shorts/${data.videoId}` : `/video/${data.videoId}`);
       }, 500);
-    } catch (error) {
+    } catch (error: any) {
       toast({
-        title: "Ошибка при загрузке",
-        description: "Произошла ошибка при загрузке видео. Пожалуйста, попробуйте еще раз.",
-        variant: "destructive"
+        title: 'Ошибка при загрузке',
+        description: error.message || 'Произошла ошибка при загрузке видео',
+        variant: 'destructive'
       });
+      setUploading(false);
     }
   };
 
@@ -206,7 +187,6 @@ const Upload = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Проверка на наличие видеофайла перед началом загрузки
     if (!videoFile) {
       toast({
         title: "Ошибка",
@@ -216,7 +196,6 @@ const Upload = () => {
       return;
     }
     
-    // Проверка на наличие заголовка
     if (!title.trim()) {
       toast({
         title: "Ошибка",
@@ -226,7 +205,15 @@ const Upload = () => {
       return;
     }
     
-    // Начинаем загрузку только после нажатия кнопки
+    if (!captchaVerified) {
+      toast({
+        title: "Ошибка",
+        description: "Пожалуйста, подтвердите, что вы не робот",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     simulateUpload();
   };
 
@@ -596,6 +583,23 @@ const Upload = () => {
               </div>
             </div>
             
+            <div className="flex items-start space-x-2 p-4 bg-muted/30 rounded-lg">
+              <Checkbox
+                id="captcha"
+                checked={captchaVerified}
+                onCheckedChange={(checked) => setCaptchaVerified(checked === true)}
+                disabled={uploading}
+              />
+              <div className="grid gap-1.5 leading-none">
+                <Label htmlFor="captcha" className="text-sm font-medium leading-none">
+                  Я не робот
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Подтвердите, что вы человек
+                </p>
+              </div>
+            </div>
+
             {uploading && (
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">

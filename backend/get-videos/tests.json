@@ -1,0 +1,15 @@
+{
+  "tests": [
+    {
+      "name": "Test get videos",
+      "method": "GET",
+      "path": "/?type=regular&category=all",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "videos": "array",
+        "count": "number"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
